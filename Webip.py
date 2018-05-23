@@ -15,14 +15,10 @@ class Webip():
     封装ip信息
     """
     baiduapi = 'http://api.map.baidu.com'
-    # baiduapi = 'https://api.map.baidu.com'
     bdapi_suffix='/location/ip'
-
 
     def __init__(self,ip):
         self.ip=ip
-
-
 
     def url_init(self):
         queryStr = '{api}?ip={ip}&coor=bd09ll&ak={ak}'.format(api=self.bdapi_suffix, ip=self.ip, ak=self.__AK_code)
@@ -32,7 +28,6 @@ class Webip():
         self.url = '{baiduapi}{queryStr}&sn={sn_code}'.format(baiduapi=self.baiduapi, queryStr=queryStr,
                                                               sn_code=md5_value)
         return self.url
-
 
     def get_ip_info(self):
         url=self.url_init()
