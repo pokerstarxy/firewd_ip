@@ -47,6 +47,7 @@ class Webip():
 
 
 
-a=Webip('183.37.34.80')
-a.get_ip_info()
+a=Webip('120.25.64.210')
+import  json
+print json.dumps(a.get_ip_info(),indent=4,ensure_ascii=False)
 
