@@ -1,13 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import urllib,hashlib,requests
-
-"""
-状态码：
-0      正常返回
-1      无法获取到百度API的返回值
-
-"""
+import urllib,hashlib,requests,datetime
 
 
 class Webip():
@@ -19,6 +12,7 @@ class Webip():
 
     def __init__(self,ip):
         self.ip=ip
+        self.value=''
 
     def url_init(self):
         queryStr = '{api}?ip={ip}&coor=bd09ll&ak={ak}'.format(api=self.bdapi_suffix, ip=self.ip, ak=self.__AK_code)
@@ -30,13 +24,37 @@ class Webip():
         return self.url
 
     def get_ip_info(self):
+        '''
+        API 接口使用
+        :return:
+        '''
         url=self.url_init()
         response=requests.get(url,timeout=5)
         if response.status_code == 200:
             self.value=response.json()
             if self.value['status'] == 0:
-                return self.value,0
-        return 'WebIp',1
+                # print self.value
+                return 0
+                # return  self.value
+        return 2001
+
+    def ip_info(self):
+        '''
+        百度api接口返回ip详细信息
+        :return:
+        '''
+        if self.value:
+            city_code=self.value['content']['address_detail']['city_code']
+            city=self.value['content']['address']
+            temp_info=self.value['address'].split('|')
+            country_code=temp_info[0]
+            return country_code,city_code,city
+        else:
+            return ''
+
+    @property
+    def md5_ip(self):
+        return hashlib.md5(self.ip).hexdigest()
 
 
 
@@ -47,7 +65,10 @@ class Webip():
 
 
 
-a=Webip('120.25.64.210')
-import  json
-print json.dumps(a.get_ip_info(),indent=4,ensure_ascii=False)
+
+
+# a=Webip('120.25.64.210')
+# # a=Webip('120.77.242.124')
+# import  json
+# print json.dumps(a.get_ip_info(),indent=4,ensure_ascii=False)
 
