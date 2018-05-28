@@ -5,37 +5,13 @@ from flask import request,jsonify
 from config import UseConfig
 from database import db_session
 from flask_apscheduler import APScheduler
-import flask_restful,flask_mail,flask_cache
-from logging.handlers import SMTPHandler
-from logging import getLogger
-from logging import Formatter
+from flask_errormail import mail_on_500
+from werkzeug.contrib.cache import SimpleCache
+ADMINS = ['pokerstarxy@sina.com']
+cache=SimpleCache()
 app = Flask(__name__)
-
-
-# cache.init_app(app)
-# ADMINS = ['yourname@example.com']
-# if not app.debug:
-#     mail_handler = SMTPHandler('127.0.0.1',
-#                                'server-error@example.com',
-#                                ADMINS, 'YourApplication Failed')
-#     mail_handler.setLevel(logging.ERROR)
-#     mail_handler.setFormatter(Formatter('''
-#     Message type:       %(levelname)s
-#     Location:           %(pathname)s:%(lineno)d
-#     Module:             %(module)s
-#     Function:           %(funcName)s
-#     Time:               %(asctime)s
-#
-#     Message:
-#
-#     %(message)s
-#     '''))
-#     app.logger.addHandler(mail_handler)
-#     loggers = [app.logger, getLogger('sqlalchemy'),
-#                getLogger('mail')]
-#     for logger in loggers:
-#         logger.addHandler(mail_handler)
-app.config.from_object(UseConfig)
+app.config.from_object(config_test())
+mail_on_500(app, ADMINS)
 
 
 @app.route('/')
@@ -85,10 +61,11 @@ def unlock_ip():
     if ip_obj:
         ip_obj.unlock_times+=1
         if logname == 'Anonymous':
-            #添加设置缓存
-            #添加最后一次解锁成功的时间
             area_obj=models.AREA.query.filter_by(ip_obj.ip_area).first()
             if (ip_obj.lock_1m_times > area_obj.unlock_count_1m) or (ip_obj.lock_30m_times > area_obj.unlock_count_30m):
+                # 锁定后解锁的次数
+                ip_obj.unlock_after_lockd += 1
+                db_session.commit()
                 return ip_obj.lock_status
         ip_obj.lock_status=0
         db_session.commit()
@@ -98,13 +75,9 @@ def unlock_ip():
 
 
 if __name__ == '__main__':
+
     schetask = APScheduler()
-    scheduler.init_app(app)
-    scheduler.start()
+    schetask.init_app(app)
+    schetask.start()
     app.run()
-
-
-
-# @app.teardown_request
-# def shutdown_session(exception=None):
-#     db_session.remove()
+    scheduler.stop()

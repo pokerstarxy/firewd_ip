@@ -42,13 +42,14 @@ class IPINFO(Base):
     lock_status=Column(CHAR(1))
     white_list_status=Column(CHAR(1))
     unlock_times=Column(Integer)
+    unlock_after_lockd=Column(SMALLINT)
     create_time=Column(DateTime)
     lastest_time=Column(TIMESTAMP)
     ip_detail_id = relationship('VISIT', backref='ip_detail',lazy='dynamic')
 
     def __init__(self,ip,logname,ip_log,area_id,area_info,
                  lock_status=0,white_list_status=0,unlock_times=0,
-                 lock_1m_times=0,lock_30m_times=0,today_times=1,total_times=1,
+                 lock_1m_times=0,lock_30m_times=0,today_times=1,total_times=1,unlock_after_lockd=0,
                  create_time=datetime.now(),lastest_time=datetime.now()):
         self.ip=ip
         self.logname=logname
@@ -62,8 +63,13 @@ class IPINFO(Base):
         self.lock_status=lock_status
         self.white_list_status=white_list_status
         self.unlock_times=unlock_times
+        self.unlock_after_lockd=unlock_after_lockd
         self.create_time=create_time
         self.lastest_time=lastest_time
+
+    def get_black_info(self):
+        return (self.ip,
+                self.white_list_status)
 
     def __repr__(self):
         return self.ip
@@ -88,6 +94,9 @@ class IPINFO(Base):
 
 
 class AREA(Base):
+    '''
+    依照地区  对应不用的标准值  (配置)
+    '''
     __tablename__='ip_code_info'
     id=Column(Integer, primary_key=True,autoincrement=True)
     country_code=Column(String(3))

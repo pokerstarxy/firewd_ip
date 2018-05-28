@@ -35,7 +35,7 @@ class Webip():
             if self.value['status'] == 0:
                 # print self.value
                 return 0
-                # return  self.value
+                # return self.value
         return 2001
 
     def ip_info(self):
