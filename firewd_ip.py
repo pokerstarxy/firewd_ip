@@ -1,22 +1,26 @@
 # -*- coding: utf-8 -*-
-import logging,ipmsg,models,datetime
+import ipmsg,models,datetime,logging
+from  logging.handlers import  SMTPHandler
 from flask import Flask
+from config import  UseConfig
 from flask import request,jsonify
-from config import UseConfig
 from database import db_session
-from flask_apscheduler import APScheduler
-from flask_errormail import mail_on_500
 from werkzeug.contrib.cache import SimpleCache
-ADMINS = ['pokerstarxy@sina.com']
+ADMINS = ['pokerstarxy@sina.com','chenweimeng@dzji.com']
 cache=SimpleCache()
 app = Flask(__name__)
-app.config.from_object(config_test())
-mail_on_500(app, ADMINS)
+app.config.from_object(UseConfig)
+if   not  app.debug:     #非调试模式运行邮件程序
+    mail_handler=SMTPHandler('mail.dzji.com',
+                             'sys@dzji.com',ADMINS,'IP_verify faild',
+                             credentials=('sys@dzji.com','icgoo2016'))
+    mail_handler.setLevel(logging.ERROR)
+    app.logger.addHandler(mail_handler)
 
 
 @app.route('/')
 def hello_world():
-    return 'Hello World!'
+    return 'Hello World! This is a flask test'
 
 
 @app.route('/verify/')
@@ -75,9 +79,4 @@ def unlock_ip():
 
 
 if __name__ == '__main__':
-
-    schetask = APScheduler()
-    schetask.init_app(app)
-    schetask.start()
     app.run()
-    scheduler.stop()

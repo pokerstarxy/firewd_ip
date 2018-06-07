@@ -10,6 +10,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from config import UseConfig
+from models import *
 engine = create_engine(UseConfig.DATABASE_URI, convert_unicode=True)
 db_session = scoped_session(sessionmaker(autocommit=False,
                                          autoflush=False,
@@ -19,13 +20,11 @@ Base.query = db_session.query_property()
 
 
 def init_db():
-    import models
     Base.metadata.create_all(bind=engine)
     print u'创建数据库完成'
 
 
 def drop_db():
-    import models
     chocie=raw_input(u'确定要删除数据库? Y/N')
     chocie=chocie.upper()
     if chocie == 'Y':

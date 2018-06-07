@@ -8,7 +8,6 @@ from sqlalchemy import func
 def get_ip(timestr):
     with open('aaa.txt','w+') as f:
         f.writelines('haha')
-    print 123
     str_time='rate_{}m'.format(timestr)
     lock_str='lock_{}m_times'.format(timestr)
     NOW=datetime.datetime.now()
@@ -37,5 +36,5 @@ def fwd_rule_two():
 def get_black_list():
     fwd_rule_one()
     fwd_rule_two()
-    ip_blk_results
+    # ip_blk_results
 

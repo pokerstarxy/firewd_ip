@@ -33,9 +33,7 @@ class Webip():
         if response.status_code == 200:
             self.value=response.json()
             if self.value['status'] == 0:
-                # print self.value
                 return 0
-                # return self.value
         return 2001
 
     def ip_info(self):
@@ -69,6 +67,8 @@ class Webip():
 
 # a=Webip('120.25.64.210')
 # # a=Webip('120.77.242.124')
+# a=Webip('104.160.41.149')
+# print  a.get_ip_info()
 # import  json
 # print json.dumps(a.get_ip_info(),indent=4,ensure_ascii=False)
 

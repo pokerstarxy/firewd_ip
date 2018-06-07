@@ -6,42 +6,21 @@
 
 
 class Config(object):
-    JOBS = [
-        {
-            'id': 'get_ip_ban1',
-            'func': 'crontask:get_ip',
-            'args': 1,
-            'trigger': 'interval',
-            'seconds': 1 * 30
-        },
-        {
-            'id': 'get_ip_ban30',
-            'func': 'crontask:get_ip',
-            'args': 30,
-            'trigger': 'interval',
-            'seconds': 30 * 60
-        },
-        {
-            'id': 'get_black_list',
-            'func': 'crontask:get_black_list',
-            'args': None,
-            'trigger': 'interval',
-            'seconds': 60 * 60
-        },
-    ]
-    SCHEDULER_API_ENABLED = True
 
+    # SCHEDULER_API_ENABLED = True
+    pass
 
 class ProductionConfig(Config):
     DEBUG = False
     TESTING = False
-    DATABASE_URI = ''
+    DATABASE_URI = ''   #redis
 
 
 class DevelopmentConfig(Config):
     DEBUG = True
     TESTING = True
-    DATABASE_URI ='mysql://root:171024@127.0.0.1/fwdip'
+    # DATABASE_URI ='mysql://root:171024@127.0.0.1/fwdip'
+    DATABASE_URI ='mysql://root:asdasd@192.168.0.6/a_chenwm_fwdip'
 
 
 class UseConfig(DevelopmentConfig):
