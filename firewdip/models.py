@@ -3,7 +3,6 @@
 
 """
 数据库结构模型
-
 """
 from database import Base
 from datetime import datetime
@@ -48,7 +47,7 @@ class IPINFO(Base):
     ip_detail_id = relationship('VISIT', backref='ip_detail',lazy='dynamic')
 
     def __init__(self,ip,logname,ip_log,area_id,area_info,
-                 lock_status=0,white_list_status=0,unlock_times=0,
+                 lock_status,white_list_status=0,unlock_times=0,
                  lock_1m_times=0,lock_30m_times=0,today_times=1,total_times=1,unlock_after_lockd=0,
                  create_time=datetime.now(),lastest_time=datetime.now()):
         self.ip=ip
@@ -70,6 +69,17 @@ class IPINFO(Base):
     def get_black_info(self):
         return (self.ip,
                 self.white_list_status)
+
+    def  ip_white(self,status_str):
+        """
+        白名单 code 8
+        黑名单 code 9
+        重定向 code 1
+        ip段     code  2
+
+        :return:
+        """
+        return self.white_list_status=='8'
 
     def __repr__(self):
         return self.ip
@@ -112,10 +122,10 @@ class AREA(Base):
                  unlock_count_1m=6,unlock_count_30m=3):
         self.country_code=country_code
         self.city_code=city_code
-        self.rate_1m=rate_1m
+        self.rate_1m=rate_1m                              #一分钟访问次数
         self.rate_30m=rate_30m
         self.rate_ipseg_30m=rate_ipseg_30m
-        self.unlock_count_1m=unlock_count_1m
+        self.unlock_count_1m=unlock_count_1m          #一分钟解锁次数
         self.unlock_count_30m=unlock_count_30m
 
     def __repr__(self):

@@ -87,11 +87,27 @@ id   ipseg(md5)   status  create_time
 
 
 
-接口格式
-ip信息封装(接口选择)
+- 接口格式
+- ip信息封装(接口选择)
 定时任务
 循环调用
 机器学习？限制非登录用户接口访问次数
 celery 任务
 清cache 任务    固定配置
 异步任务定时 获取 配置信息   主动和被动
+geoip 定时更新
+[百度](http://www.baidu.com)
+![](http://www.tiejiang.org/wp-content/uploads/2016/11/NFS.png?imageView2/1/w/175/h/126/q/100)
+*haha*
+**aa**
+
+
+
+geoip 定时更新
+当天访问次数z置0
+char 读取 是什么类型
+添加进白名单需要 重置lock time
+数据库迁移和后台
+                   django celery  设置任务完成清除队列
+                   
+    

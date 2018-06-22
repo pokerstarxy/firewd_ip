@@ -41,5 +41,5 @@ def test():
 if __name__=='__main__':
     para=sys.argv[1]
     import database
-    func=getattr(database,para)
+    func=getattr(database, para)
     func()
