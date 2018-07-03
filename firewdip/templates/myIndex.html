@@ -1,0 +1,16 @@
+{% extends 'admin/master.html' %}
+{% block body %}
+
+<div align="center">
+<h2>Ip Management</h2>
+    <p style="font-size: 30px;font-weight: 900;color: red ">{% if message %} {{message|safe}} {% endif %}</p>
+    <form method="POST">
+        {{ form.csrf_token }}
+        <label style="display: inline-block;width:  50px;text-align: right;">ip:</label>{{form.ip}}
+        <br>
+        <label style="display: inline-block;width:  50px;text-align: right;">choice:</label>{{form.choice}}
+        <br>
+          {{ form.submit() }}
+    </form>
+</div>
+{% endblock %}

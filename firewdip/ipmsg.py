@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import urllib,hashlib,requests,os
+import urllib,hashlib,requests,os,re
 import geoip2.database
 
 
@@ -11,10 +11,16 @@ class Webip():
     baiduapi = 'http://api.map.baidu.com'
     bdapi_suffix='/location/ip'
     basedir = os.path.dirname(os.path.abspath(__file__))
+    pattern = re.compile(r'((2[0-4]\d|25[0-5]|[01]?\d\d?)\.){3}(2[0-4]\d|25[0-5]|[01]?\d\d?)')
 
-    def __init__(self,ip):
+    def __init__(self,ip,logname):
         self.ip=ip
         self.value=''
+        self.logname=logname
+
+    def  ip_valid(self):
+        """验证ip有效性"""
+        return re.match(self.pattern,self.ip)
 
     def getip_country_code(self):
         path=os.path.join(self.basedir,'geoipdb/GeoLite2-Country.mmdb')
@@ -42,7 +48,7 @@ class Webip():
             self.value = response.json()
             return 0
         else:
-            return  1
+            raise RuntimeError('BaiDu API Error')
 
     def ip_info(self):
         '''
@@ -62,6 +68,6 @@ class Webip():
 
     @property
     def md5_ip(self):
-        return hashlib.md5(self.ip).hexdigest()
+        return hashlib.md5(self.ip+self.logname).hexdigest()
 
 

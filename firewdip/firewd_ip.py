@@ -1,26 +1,36 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from firewdip import ipmsg,models
+import ipmsg,models
 import logging
-from  logging.handlers import  SMTPHandler
-from flask import Flask
+from logging.handlers import  SMTPHandler
+from flask import Flask,request,jsonify
 from config import  UseConfig
-from flask import request,jsonify
-from firewdip.database import db_session
-from werkzeug.contrib.cache import SimpleCache
-from   firewdip.sepcial_edit import  white_country_list
+from database import db_session
+from sepcial_edit import  white_country_list
+from flask_admin import Admin
+from homepage import MyView,IPModelView,IpAreaView,IpSegModelView
 
 ADMINS = ['chenweimeng@dzji.com']
 # ADMINS = ['pokerstarxy@sina.com','chenweimeng@dzji.com']
-cache=SimpleCache()
-app = Flask(__name__)
-app.config.from_object(UseConfig)
-if   not  app.debug:     #非调试模式 运行邮件程序
-    mail_handler=SMTPHandler('mail.qq.com',
-                             's@qq.com',ADMINS,'IP_verify code BUG',
-                             credentials=('s@qq.com','2018'))
-    mail_handler.setLevel(logging.ERROR)
-    app.logger.addHandler(mail_handler)
+
+
+def create_app():
+    app = Flask(__name__)
+    app.config.from_object(UseConfig)
+    admin=Admin(app)
+    admin.add_view(MyView(name='IpSet'))
+    admin.add_view(IPModelView(models.IPINFO,db_session))
+    admin.add_view(IpAreaView(models.AREA,db_session))
+    admin.add_view(IpSegModelView(models.IPSEG,db_session))
+    if   not  app.debug:     #非调试模式 运行邮件程序
+        mail_handler = SMTPHandler('mail.qq.com',
+                                   'sys@qq.com', ADMINS, 'IP_verify code BUG',
+                                   credentials=('qq@qq.com', 'co2016'))
+        mail_handler.setLevel(logging.ERROR)
+        app.logger.addHandler(mail_handler)
+    return app
+
+
+app=create_app()
 
 
 @app.route('/')
@@ -36,52 +46,55 @@ def verify_ip():
     logname=request.args.get('logname','Anonymous')
     partno=request.args.get('partno','nothing')
     if all ([ip,logname]):
-        logip= ipmsg.Webip(ip)
+        logip= ipmsg.Webip(ip,logname)
         ip_obj= models.IPINFO.query.filter_by(ip_log=logip.md5_ip).first()
         if ip_obj:
             ip_obj.today_times += 1
             ip_obj.total_times += 1
         else:
-            ip_addr_info=logip.get_ip_info()
-            if not ip_addr_info:      #所有的正常返回均为0
-                country_code, city_code, city=logip.ip_info()
-                area_id= models.AREA.query.filter_by(country_code=country_code, city_code=city_code).first()
-                if not area_id:
-                    area_id= models.AREA(country_code=country_code, city_code=city_code)
-                    db_session.add(area_id)
-                    db_session.commit()
-                ip_lock_status = 1 if country_code not in white_country_list else 0
-                ip_obj= models.IPINFO(ip=ip, logname=logname, ip_log=logip.md5_ip,
-                                      area_id=area_id.id, area_info=city,lock_status=ip_lock_status )
-                db_session.add(ip_obj)
-                db_session.commit()
+            try:
+                throw_flag=1
+                ip_addr_info=logip.get_ip_info()
+            except RuntimeError:
+                return jsonify(status=0)                 #'baiduapi出现故障,先让查询,邮件通知管理人员'
             else:
-                print u'baiduapi出现故障,先让查询,邮件通知管理人员'
-                return jsonify(status=0)
-        visit_info= models.VISIT(partno=partno, ip_detail_id=ip_obj.id)
+                throw_flag=0
+                if not ip_addr_info:      #正常返回为0
+                    country_code, city_code, city=logip.ip_info()
+                    area_id= models.AREA.query.filter_by(country_code=country_code, city_code=city_code).first()
+                    if not area_id:
+                        area_id= models.AREA(country_code=country_code, city_code=city_code)
+                        db_session.add(area_id)
+                        db_session.commit()
+                    ip_lock_status = 1 if country_code not in white_country_list else 0
+                    ip_obj= models.IPINFO(ip=ip, logname=logname, ip_log=logip.md5_ip,
+                                          area_id=area_id.id, area_info=city,lock_status=ip_lock_status )
+                    db_session.add(ip_obj)
+                    db_session.commit()
+            finally:
+                if throw_flag:
+                    raise
+        visit_info= models.VISIT(partno=partno, ip_detail_id=ip_obj.id,lock_flag=ip_obj.lock_status)
         db_session.add(visit_info)
         db_session.commit()
         return jsonify(status=ip_obj.lock_status)
-    else:
-        #内部调用接口,不对特殊情况返回
-        pass
 
 
 @app.route('/verify_unlock/')
 def unlock_ip():
     ip=request.args.get('ip')
     logname=request.args.get('logname','Anonymous')
-    logip= ipmsg.Webip(ip)
+    logip= ipmsg.Webip(ip,logname)
     ip_obj= models.IPINFO.query.filter_by(ip_log=logip.md5_ip).first()
     if ip_obj:
         ip_obj.unlock_times+=1
         if logname == 'Anonymous':
             area_obj= models.AREA.query.filter_by(id=ip_obj.area_id).first()
-            if (ip_obj.lock_1m_times > area_obj.unlock_count_1m) or (ip_obj.lock_30m_times > area_obj.unlock_count_30m):
+            if (ip_obj.lock_1m_times > area_obj.lock_max_1m) or (ip_obj.lock_30m_times > area_obj.lock_max_30m):
             # 锁定后解锁的次数，只针对非登录用户
                 ip_obj.unlock_after_lockd += 1
                 db_session.commit()
-                return ip_obj.lock_status
+                return jsonify(status=ip_obj.lock_status)
         ip_obj.lock_status=0
         ip_obj.unlock_after_lockd=0
         db_session.commit()
@@ -92,6 +105,10 @@ def unlock_ip():
 
 @app.route('/test/')
 def test_mail():
+    """
+    测试程序内部错误出发邮件
+    :return:
+    """
     print 'ab%s' %(1,2,3)
 
 
@@ -101,5 +118,5 @@ def shutdown_session(exception=None):
     db_session.remove()
 
 
-if __name__ == '__main__':
-    app.run()
+
+

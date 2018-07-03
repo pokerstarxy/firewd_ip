@@ -1,113 +1,30 @@
-# firewd_ip
-ip ban
-fwd_ip
+## 限制icgoo访问频率
+
+### 主要结构
+1.  geoipdb  分析国外ip的国家编码 --定期更新
+2.  fab file 主要做一些icgoo后端的批量操作
+3.  homepage 后台文件，提供ip状态修改的界面
+4.  ipmsg ip信息接口  国内用的百度api 国外用的geoip
+5.  sepcial_edit  部分可修改参数
+6.  task 异步任务
+7.  database 数据库接口文件  可以用于测试时候创建删除数据库
 
 
-1    数据库    mysql
-
-   1) 表结构
-
-
-
-2   接口
-
-    1) restapi 原则
-
-
-3   内存数据库
-
-        1）数据存储
-
-
-
-4  防火墙配置
-
-    如何下发？
-
-
-
-5   策略
-    ip 频率
+### 主要思路
+-  系统只提供验证和解锁的两个接口，有用户名无限解锁，无用户名有限制
+-  正常规则不区分用户名，就是限制你的访问次数和频率
+-  特殊规则区分白名单,若白名单被判定为爬虫,特定情况(依赖nginx日志的分析结果)也是封流量
 
 
 
 
+### 问题处理
+依赖城市设置访问次数限制和频率，code_info表中只给了编码,城市的话ip_info表可以看到.如果要设置，
+利用这两个数据更新需要特别设置的城市  或者直接查编码表更新
+
+  
 
 
-
-
-
-  ip 表       查询记录
-  id,partno,query_time,foriegn_key_ipinfo
-
-
-  ip 状态    ip信息
-
-  id,ip,logname,md5(ip+logname),lock_status,unlock_times,1m,10m,60m,total_times,today_times,key_country_code,key_city_code,create_time,lastest_time,ipseg_status,white_list_status(0,1,2)
-
-
-  次数限值     限制次数    计数式限制
-                                --限制区域
-                 --海外
-login                      --非限制区域
-                                    --限制省份
-                   --国内
-                                    --非限制省份
-
-               --限制区域
-                 --海外
-notlogin                      --非限制区域
-                                    --限制省份
-                   --国内
-                                    --非限制省份
-
-
-
-
-  区域         地区
-  id     country_code     area_code     inCN
-
-
-
-
-
-
-
-
-
-ip段怎么设置
-ip 信息直接给出？    --定义规则 添加记录？
-
-id   ipseg(md5)   status  create_time
-
-
-
-
-
-
-
-
-- 接口格式
-- ip信息封装(接口选择)
-定时任务
-循环调用
-机器学习？限制非登录用户接口访问次数
-celery 任务
-清cache 任务    固定配置
-异步任务定时 获取 配置信息   主动和被动
-geoip 定时更新
-[百度](http://www.baidu.com)
-![](http://www.tiejiang.org/wp-content/uploads/2016/11/NFS.png?imageView2/1/w/175/h/126/q/100)
-*haha*
-**aa**
-
-
-
-geoip 定时更新
-当天访问次数z置0
-char 读取 是什么类型
-添加进白名单需要 重置lock time
-数据库迁移和后台
-                   django celery  设置任务完成清除队列
+### 测试的时候想到再写
                    
     

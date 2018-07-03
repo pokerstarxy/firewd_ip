@@ -14,13 +14,14 @@ class VISIT(Base):
     __tablename__ = 'ip_visit_log'
     id=Column(Integer, primary_key=True,autoincrement=True)
     partno=Column(String(30),)
-    query_time=Column(DateTime)
+    lock_flag=Column(SMALLINT)
+    query_time=Column(DateTime,default=datetime.now)
     ip_detail_id=Column(Integer,ForeignKey('ip_info.id'))
 
-    def __init__(self,partno,ip_detail_id,query_time=datetime.now()):
+    def __init__(self,partno,ip_detail_id,lock_flag):
         self.partno=partno
-        self.query_time=query_time
-        self.ip_detail_id=ip_detail_id
+        self.lock_flag=lock_flag        #统计有效查询次数
+        self.ip_detail_id=ip_detail_id  #ip_info 主键
 
     def __repr__(self):
         return  self.partno
@@ -31,51 +32,37 @@ class IPINFO(Base):
     id=Column(Integer,primary_key=True,autoincrement=True)
     ip=Column(String(16))
     logname=Column(String(11))
-    ip_log=Column(CHAR(32),index=True,unique=True)
-    lock_1m_times=Column(SMALLINT)
-    lock_30m_times=Column(SMALLINT)
-    area_id=Column(Integer, ForeignKey('ip_code_info.id'))
+    ip_log=Column(CHAR(32),index=True,unique=True)   #MD5 ip+logname
+    lock_1m_times=Column(SMALLINT,default=0)     #1m锁定次数
+    lock_30m_times=Column(SMALLINT,default=0)
+    area_id=Column(Integer, ForeignKey('ip_code_info.id'))  #地区信息
     area_info = Column(String(30), )
-    today_times=Column(SMALLINT)
-    total_times =Column(Integer)
-    lock_status=Column(CHAR(1))
-    white_list_status=Column(CHAR(1))
-    unlock_times=Column(Integer)
-    unlock_after_lockd=Column(SMALLINT)
-    create_time=Column(DateTime)
-    lastest_time=Column(TIMESTAMP)
+    today_times=Column(SMALLINT,default=1)  #当天查询次数
+    total_times =Column(Integer,default=1)
+    lock_status=Column(SMALLINT)
+    white_list_status=Column(CHAR(1),default=0)     #白名单状态
+    unlock_times=Column(Integer,default=0)
+    unlock_after_lockd=Column(SMALLINT,default=0)
+    create_time=Column(DateTime,default=datetime.now)
+    lastest_time=Column(TIMESTAMP,default=datetime.now,onupdate=datetime.now)
     ip_detail_id = relationship('VISIT', backref='ip_detail',lazy='dynamic')
 
-    def __init__(self,ip,logname,ip_log,area_id,area_info,
-                 lock_status,white_list_status=0,unlock_times=0,
-                 lock_1m_times=0,lock_30m_times=0,today_times=1,total_times=1,unlock_after_lockd=0,
-                 create_time=datetime.now(),lastest_time=datetime.now()):
+    def __init__(self,ip,logname,ip_log,area_id,area_info,lock_status,):
         self.ip=ip
         self.logname=logname
         self.ip_log=ip_log
-        self.lock_1m_times=lock_1m_times
-        self.lock_30m_times=lock_30m_times
         self.area_id=area_id
         self.area_info=area_info
-        self.today_times=today_times
-        self.total_times=total_times
         self.lock_status=lock_status
-        self.white_list_status=white_list_status
-        self.unlock_times=unlock_times
-        self.unlock_after_lockd=unlock_after_lockd
-        self.create_time=create_time
-        self.lastest_time=lastest_time
 
     def get_black_info(self):
         return (self.ip,
                 self.white_list_status)
 
-    def  ip_white(self,status_str):
+    def  ip_white(self):
         """
         白名单 code 8
         黑名单 code 9
-        重定向 code 1
-        ip段     code  2
 
         :return:
         """
@@ -85,48 +72,24 @@ class IPINFO(Base):
         return self.ip
 
 
-# class UNLOCk(Base):
-#     __tablename__='ip_rate_limit'
-#     id=Column(Integer, primary_key=True,autoincrement=True)
-#     time_value=Column(CHAR(3))
-#     rate=Column(String(4))
-#     unlock_time=Column(String(4))
-#     rate_ipseg=Column(String(6))
-#
-#     def __init__(self,time_value,rate,unlock_time,rate_ipseg):
-#         self.time_value=time_value
-#         self.rate=rate
-#         self.unlock_time=unlock_time
-#         self.rate_ipseg=rate_ipseg
-#
-#     def __repr__(self):
-#         return self.__tablename__
-
-
 class AREA(Base):
     '''
     依照地区  对应不用的标准值  (配置)
     '''
     __tablename__='ip_code_info'
     id=Column(Integer, primary_key=True,autoincrement=True)
-    country_code=Column(String(3))
-    city_code=Column(SMALLINT)
-    rate_1m=Column(SMALLINT)
-    rate_30m=Column(SMALLINT)
-    rate_ipseg_30m=Column(SMALLINT)
-    unlock_count_1m=Column(SMALLINT)
-    unlock_count_30m=Column(SMALLINT)
+    country_code=Column(String(3))  #国家编码
+    city_code=Column(SMALLINT)    #城市编码  --国外为0
+    rate_1m=Column(SMALLINT,default=5)             #一分钟访问次数
+    rate_30m=Column(SMALLINT,default=100)
+    rate_ipseg_30m=Column(SMALLINT,default=200)
+    lock_max_1m=Column(SMALLINT,default=6)      #锁定次数大于此数字不让解锁
+    lock_max_30m=Column(SMALLINT,default=3)
     area_limit_id = relationship('IPINFO', backref='ip_area', lazy='dynamic')
 
-    def __init__(self,country_code,city_code,rate_1m=5,rate_30m=100,rate_ipseg_30m=200,
-                 unlock_count_1m=6,unlock_count_30m=3):
+    def __init__(self,country_code,city_code,):
         self.country_code=country_code
         self.city_code=city_code
-        self.rate_1m=rate_1m                              #一分钟访问次数
-        self.rate_30m=rate_30m
-        self.rate_ipseg_30m=rate_ipseg_30m
-        self.unlock_count_1m=unlock_count_1m          #一分钟解锁次数
-        self.unlock_count_30m=unlock_count_30m
 
     def __repr__(self):
         return  self.country_code
@@ -137,14 +100,12 @@ class IPSEG(Base):
     id=Column(Integer, primary_key=True,autoincrement=True)
     ip=Column(String(12))
     ipseg=Column(CHAR(32),unique=True,index=True)    #md5
-    ipseg_status=Column(CHAR(1))
-    create_time=Column(DateTime)
+    ipseg_status=Column(SMALLINT,default=1)
+    create_time=Column(DateTime,default=datetime.now)
 
-    def __init__(self,ip,ipseg,ipseg_status=1,create_time=datetime.now()):
+    def __init__(self,ip,ipseg,):
         self.ip = ip
         self.ipseg = ipseg
-        self.ipseg_status = ipseg_status
-        self.create_time = create_time
 
     def __repr__(self):
         return self.ip
