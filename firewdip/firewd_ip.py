@@ -190,12 +190,12 @@ def his_search():
         search_len=len(user_search_log)
         if int(skip) <  search_len:
             temp_res=sorted(user_search_log,key=lambda  x:x[0],reverse=True)[int(skip):end_index]
-            res=[[i[1],i[2]] for i in temp_res if i[1] in ['none','nothing'] ] #搜索型号传入有字符串none
+            res=[[i[1],i[2]] for i in temp_res if i[1] not  in ['none','nothing'] ] #搜索型号传入有字符串none
     else:
         search_len=len(set(user_search_log))
         if int(skip) < search_len:
             temp_res=sorted(list( set(user_search_log)),key=lambda x :user_search_log.count(x),reverse=True)[int(skip):end_index]
-            res=[[i,user_search_log.count(i)] for i in temp_res if i in ['none','nothing'] ]
+            res=[[i,user_search_log.count(i)] for i in temp_res if i  not in ['none','nothing'] ]
     return jsonify(user=user_name,partno_list=res,log_total_len=search_len,skip_num=int(skip))
 
 
