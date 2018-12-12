@@ -55,9 +55,8 @@ class IPINFO(Base):
         self.area_info=area_info
         self.lock_status=lock_status
 
-    def get_black_info(self):
-        return (self.ip,
-                self.white_list_status)
+    def has_logname(self):
+        return self.logname!='Anonymous'
 
     def  ip_white(self):
         """
@@ -92,7 +91,7 @@ class AREA(Base):
         self.city_code=city_code
 
     def __repr__(self):
-        return  self.country_code
+        return  ('%s-%s') %(self.country_code,self.city_code)
 
 
 class IPSEG(Base):

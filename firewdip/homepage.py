@@ -2,12 +2,25 @@
 #coding=utf8
 from flask_admin import  BaseView, expose
 from flask_admin.contrib.sqla import ModelView
-from flask import  request,flash
+from flask import  request,flash,Response
 from models import IPSEG,IPINFO
 from database import  db_session
 from form import IpInfoForm
 from sepcial_edit import  sql_results
 import hashlib
+from werkzeug.exceptions import HTTPException
+
+
+class ModelView(ModelView):
+    def is_accessible(self):
+        from firewd_ip import app
+        auth = request.authorization or request.environ.get('REMOTE_USER')  # workaround for Apache
+        if not auth or (auth.username, auth.password) != app.config['ADMIN_CREDENTIALS']:
+            raise HTTPException('', Response(
+                "Please log in.", 401,
+                {'WWW-Authenticate': 'Basic realm="Login Required"'}
+            ))
+        return True
 
 
 class MyView(BaseView):
@@ -79,6 +92,7 @@ class  IpAreaView(ModelView):
         'rate_ipseg_30m',
         'lock_max_1m',
         'lock_max_30m']
+    column_searchable_list = ['city_code']
 
 
 class IpSegModelView(ModelView):
@@ -96,6 +110,5 @@ class IpSegModelView(ModelView):
             ('1','1'),
         ]
     }
-
 
 
