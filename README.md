@@ -12,3 +12,4 @@
 6.  task 异步任务
 7.  database 数据库接口文件  可以用于测试时候创建删除数据库
 8. supervisor+nginx+gunicorn
+9. update test
